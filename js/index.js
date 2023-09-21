@@ -85,7 +85,6 @@ function bookDetailViewer(book) {
         subtitle.style.margin = '1em';
         title.after(subtitle)
     };
-    console.log('Book detail viewer function was invoked')
 }
 
 // A user can like a book by clicking on a button. Display a LIKE button along with the book details. When the button is clicked, send a PATCH request to http://localhost:3000/books/:id with an array of users who like the book, and add a new user to the list.
@@ -96,7 +95,8 @@ function likeABook(event) {
     let bookId = event.target.parentElement.dataset.bookId;
 
     if (event.target.previousSibling.textContent.includes(newUser)) {
-        alert('You have already like this book')
+        confirm('Would you like to unlike this book? Click "OK" to confirm.');
+        removeUserFromUserDatabase(newUser)
     } else {
         updateUserDatabase(newUser, bookId);
     }
@@ -146,4 +146,37 @@ function updateBookDatabase(newUserInfo, bookId) {
         .then(response => response.json())
         .then(bookDetailViewer)
     }
+}
+
+// Bonus: Un-Like a Book
+// If a user has already liked a book, clicking the LIKE button a second time should remove that user from the list of users who have liked the book.
+
+// Make a second PATCH request with the updated array of users, removing your user from the list. Also remove the user from the DOM.
+
+function removeUserFromUserDatabase(newUser) {
+    let userId = ''    
+
+    fetch(userDatabase)
+    .then(response => response.JSON)
+    .then(userList => {
+        userList.forEach(object => {
+            if (object.username == newUser) {
+                userId = object.id
+            }
+        });
+        removeUser
+    })
+
+    function removeUser() {
+        fetch(userDatabase+'/'+userId, {
+            method: "DELTE"
+        })
+        .then(removeUserFromBookDatabase(userId))
+    }
+
+}
+
+function removeUserFromBookDatabase(userId) {
+    console.log('this will delete the user\'s like from the book database')
+
 }
