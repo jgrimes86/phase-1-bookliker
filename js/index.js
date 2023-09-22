@@ -91,14 +91,34 @@ function bookDetailViewer(book) {
 
 //check already-listed users and invoke functions to update databases
 function likeABook(event) {
-    let newUser = prompt("Enter user name to like the book:");
+    let user = prompt("Enter user name to like the book:");
     let bookId = event.target.parentElement.dataset.bookId;
 
-    if (event.target.previousSibling.textContent.includes(newUser)) {
+    if (event.target.previousSibling.textContent.includes(user)) {
         confirm('Would you like to unlike this book? Click "OK" to confirm.');
-        removeUserFromUserDatabase(newUser)
+        fetchUserInfo(user)
     } else {
-        updateUserDatabase(newUser, bookId);
+        checkUserDatabase(user, bookId);
+    }
+}
+
+//check whether user already exists in user database
+function checkUserDatabase(user, bookId) {
+    fetch(userDatabase)
+    .then(response => response.json())
+    .then(existingUserChecker)
+
+    function existingUserChecker(userList) {
+        let foundUser = userList.find(item => {
+            if (item.username === user) {
+                return true
+            }
+        })
+        if (foundUser === undefined) {
+            updateUserDatabase(user, bookId);
+        } else {
+            updateBookDatabase(foundUser, bookId);
+        }
     }
 }
 
@@ -153,30 +173,52 @@ function updateBookDatabase(newUserInfo, bookId) {
 
 // Make a second PATCH request with the updated array of users, removing your user from the list. Also remove the user from the DOM.
 
-function removeUserFromUserDatabase(newUser) {
-    let userId = ''    
-
+function fetchUserInfo(user) {
     fetch(userDatabase)
-    .then(response => response.JSON)
-    .then(userList => {
-        userList.forEach(object => {
-            if (object.username == newUser) {
-                userId = object.id
+    .then(response => response.json())
+    .then(userList => {     
+        let userObject = userList.find(item => {
+            if (item.username === user) {
+                return true
             }
         });
-        removeUser
-    })
-
-    function removeUser() {
-        fetch(userDatabase+'/'+userId, {
-            method: "DELTE"
+        let userId = userObject.id;
+        removeUserFromBookDatabase(userId)
         })
-        .then(removeUserFromBookDatabase(userId))
-    }
-
 }
 
-function removeUserFromBookDatabase(userId) {
-    console.log('this will delete the user\'s like from the book database')
+// function removeUser(userId) {
+//         fetch(userDatabase+'/'+userId, {
+//             method: "DELETE"
+//         })
+//         .then(removeUserFromBookDatabase(userId))
+// }
 
+function removeUserFromBookDatabase(userId) {
+    let currentBook = document.getElementById('show-panel')
+    let bookId = currentBook.dataset.bookId
+
+    fetch(bookDatabase+'/'+bookId)
+    .then(response => response.json())
+    .then(patchUserInfo)
+
+    function patchUserInfo(bookInfo) {
+        let currentUserArray = bookInfo.users
+        let targetUserIndex = currentUserArray.findIndex(element => {
+            element.id = userId
+        })
+        currentUserArray.splice(targetUserIndex, 1)
+        fetch(bookDatabase+'/'+bookId, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                "users": currentUserArray,
+            }),
+        })
+        .then(response => response.json())
+        .then(bookDetailViewer)
+    }
 }
