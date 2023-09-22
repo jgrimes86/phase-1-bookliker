@@ -222,3 +222,15 @@ function removeUserFromBookDatabase(userId) {
         .then(bookDetailViewer)
     }
 }
+
+
+
+
+//testing URL query parameters:
+function testFetcher(){
+    fetch(bookDatabase+'/1/users?id=2')
+    .then(resp => resp.json())
+    .then(data => console.log(data))
+}
+testFetcher()
+
